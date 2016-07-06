@@ -1,0 +1,5 @@
+server jumphost
+zone {{ dns.domain }}.
+update add {{ vsd.xmpp }}.{{ dns.domain}}. 86400 A {{ inventory_hostname }} 
+update add _xmpp-client._tcp.{{ vsd.xmpp }}.{{ dns.domain }}. 86400 SRV 10 0 5222 {{ hostname }}.{{ dns.domain }}
+send

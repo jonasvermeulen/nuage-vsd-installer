@@ -1,0 +1,56 @@
+---
+
+# XMPP SRV not required for standalone installation
+#
+#- name: Copy NS command template to add XMPP record
+#  template: src=nsaddvsdrecords.txt dest=/tmp/nsaddvsdrecords.txt
+#  delegate_to: "{{ dns.server }}"
+
+#- name: Register SRV records for VSD
+#  shell: sudo nsupdate -k "/var/named/{{ dns.keyname }}" -v /tmp/nsaddvsdrecords.txt
+#  delegate_to: "{{ dns.server }}"
+#  become: yes
+#  become_user: centos
+  
+- name: Explicitly add VSD DNS name to /etc/hosts
+  lineinfile: dest=/etc/hosts regexp="^{{ inventory_hostname }}" line="{{ inventory_hostname }} {{ dnshostname }}.{{ dns.domain }}" state=present
+
+- name: Copy over vsd.iso file
+  copy: src={{ vsd_iso }} dest=/tmp/vsd.iso
+
+- name: Mount VSD ISO
+  mount: name=/mnt/vsd src=/tmp/vsd.iso opts=loop fstype=iso9660 state=mounted
+
+- name: Copy CentOS 6.6 Vault repo file
+  copy: src=c66.repo dest=/etc/yum.repos.d/c66.repo
+
+- name: Activate only CentOS 6.6 Repo
+  shell: "yum-config-manager --disable \\* ; yum-config-manager --enable 'CentOS-6.6 - Base'"
+
+# 
+# Syntax in Ansible 2.1 
+#- name: Disable other repos
+#  yum_repository: name=* enabled=no
+#
+#- name: Enable C6.6 Repo
+#  yum_repository: name=C6.6-base
+
+- name: Downgrade libselinux back to 6.6 version
+  shell: yum -y downgrade libselinux libselinux-python libselinux-utils libselinux-ruby
+
+- name: Uninstall conflicting packages
+  yum: name={{ item }} state=absent
+  with_items:
+   - system-config-firewall-tui
+   - xz
+
+
+# - name: Uninstall previous versions of VSD
+#   shell: "/mnt/vsd/uninstall.sh -a -y"
+
+- name: Run VSD installer (asynchronously)
+  shell: "/mnt/vsd/install.sh -y -t s -a `hostname -f` &"
+  async: 1
+  poll: 0
+
+

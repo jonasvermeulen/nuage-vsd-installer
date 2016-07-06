@@ -1,0 +1,6 @@
+[c66]
+name=CentOS-6.6 - Base
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+baseurl=http://vault.centos.org/6.6/os/x86_64/
